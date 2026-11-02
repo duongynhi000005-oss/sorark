@@ -717,6 +717,7 @@ dependencies = [
  "sorark-diff",
  "sorark-ir",
  "sorark-wasm",
+ "stellar-xdr",
  "tempfile",
 ]
 
