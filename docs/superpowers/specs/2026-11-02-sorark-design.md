@@ -87,3 +87,4 @@ Compares `old: &ContractModule` and `new: &ContractModule` via the `DiffRule` tr
 
 ### 3.5 `sorark-cli` (`sorark`)
 Provides 5 subcommands (`lint`, `diff`, `inspect`, `rules`, `init`) and 4 output formats (`text`, `json`, `sarif`, `markdown`) with deterministic CI exit codes (`0` = pass, `1` = error findings, `2` = CLI/IO failure).
+

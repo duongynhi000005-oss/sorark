@@ -1,19 +1,18 @@
+//! Workspace configuration (`sorark.toml`) and Stellar Mainnet archival constants.
+
+mod limits;
+
+pub use limits::{
+    DEFAULT_WASM_WARN_BYTES, MAINNET_LEDGER_ENTRY_MAX_BYTES, MAINNET_MAX_ENTRY_TTL,
+    MAINNET_MIN_PERSISTENT_ENTRY_TTL, MAINNET_MIN_TEMP_ENTRY_TTL,
+};
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::Path;
 use thiserror::Error;
 
-/// Stellar Mainnet minimum TTL for temporary entries (`16` ledgers, ~80 seconds).
-pub const MAINNET_MIN_TEMP_ENTRY_TTL: u32 = 16;
-/// Stellar Mainnet minimum TTL for persistent/instance entries (`4,096` ledgers, ~5.6 hours).
-pub const MAINNET_MIN_PERSISTENT_ENTRY_TTL: u32 = 4_096;
-/// Stellar Mainnet maximum TTL for any ledger entry (`3,110,400` ledgers, ~180 days).
-pub const MAINNET_MAX_ENTRY_TTL: u32 = 3_110_400;
-/// Default WASM size warning threshold (`48 KiB`).
-pub const DEFAULT_WASM_WARN_BYTES: usize = 49_152;
-/// Stellar Mainnet ledger entry hard size limit (`64 KiB`).
-pub const MAINNET_LEDGER_ENTRY_MAX_BYTES: usize = 65_536;
-
+/// Errors that can occur when reading or parsing `sorark.toml`.
 #[derive(Debug, Error)]
 pub enum ConfigError {
     #[error("Failed to read configuration file `{path}`: {source}")]
@@ -68,7 +67,7 @@ impl Default for SorarkConfig {
 }
 
 impl SorarkConfig {
-    /// Loads a `SorarkConfig` from a TOML file on disk.
+    /// Loads a [`SorarkConfig`] from a TOML file on disk.
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self, ConfigError> {
         let path_ref = path.as_ref();
         let raw = std::fs::read_to_string(path_ref).map_err(|source| ConfigError::Io {
@@ -78,7 +77,7 @@ impl SorarkConfig {
         Self::from_toml_str(&raw, &path_ref.display().to_string())
     }
 
-    /// Parses a `SorarkConfig` from a TOML string.
+    /// Parses a [`SorarkConfig`] from a raw TOML string.
     pub fn from_toml_str(raw: &str, label: &str) -> Result<Self, ConfigError> {
         toml::from_str(raw).map_err(|source| ConfigError::Toml {
             path: label.to_string(),
@@ -95,7 +94,7 @@ impl SorarkConfig {
             .any(|r| r.eq_ignore_ascii_case(rule_id))
     }
 
-    /// Returns a set of disabled rule IDs normalized to uppercase.
+    /// Returns the set of disabled rule IDs normalized to uppercase.
     #[must_use]
     pub fn disabled_rule_set(&self) -> HashSet<String> {
         self.disabled_rules

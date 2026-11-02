@@ -12,7 +12,7 @@ use sorark_ir::{
 };
 use std::io::Cursor;
 use std::path::Path;
-use stellar_xdr::curr::{
+use stellar_xdr::{
     Limited, Limits, ReadXdr, ScEnvMetaEntry, ScMetaEntry, ScSpecEntry, ScSpecFunctionV0,
     ScSpecTypeDef, ScSpecUdtEnumV0, ScSpecUdtErrorEnumV0, ScSpecUdtStructV0, ScSpecUdtUnionCaseV0,
     ScSpecUdtUnionV0, WriteXdr,
@@ -35,7 +35,7 @@ pub enum WasmEngineError {
         path: String,
         section: &'static str,
         #[source]
-        source: stellar_xdr::curr::Error,
+        source: stellar_xdr::Error,
     },
 }
 
@@ -251,6 +251,7 @@ fn populate_module_from_spec_entry(
                 .error_enums
                 .push(convert_spec_error_enum(path_label, err));
         }
+        ScSpecEntry::EventV0(_) => {}
     }
 }
 
@@ -404,7 +405,7 @@ pub fn xdr_typedef_to_typeref(td: &ScSpecTypeDef) -> TypeRef {
         ScSpecTypeDef::Bytes => TypeRef::Bytes,
         ScSpecTypeDef::String => TypeRef::String,
         ScSpecTypeDef::Symbol => TypeRef::Symbol,
-        ScSpecTypeDef::Address => TypeRef::Address,
+        ScSpecTypeDef::Address | ScSpecTypeDef::MuxedAddress => TypeRef::Address,
         ScSpecTypeDef::Option(opt) => {
             TypeRef::Option(Box::new(xdr_typedef_to_typeref(&opt.value_type)))
         }
@@ -537,11 +538,11 @@ fn evaluate_wasm_diagnostics(
 pub fn encode_soroban_wasm_with_specs(
     protocol_version: u32,
     entries: &[ScSpecEntry],
-) -> Result<Vec<u8>, stellar_xdr::curr::Error> {
+) -> Result<Vec<u8>, stellar_xdr::Error> {
     let mut wasm = vec![0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00];
 
     let env_entry = ScEnvMetaEntry::ScEnvMetaKindInterfaceVersion(
-        stellar_xdr::curr::ScEnvMetaEntryInterfaceVersion {
+        stellar_xdr::ScEnvMetaEntryInterfaceVersion {
             protocol: protocol_version,
             pre_release: 0,
         },
@@ -587,7 +588,7 @@ fn write_leb128_u32(out: &mut Vec<u8>, mut val: u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use stellar_xdr::curr::{
+    use stellar_xdr::{
         ScSpecFunctionInputV0, ScSpecUdtStructFieldV0, ScSpecUdtUnionCaseTupleV0,
         ScSpecUdtUnionCaseVoidV0, ScSymbol, StringM, VecM,
     };

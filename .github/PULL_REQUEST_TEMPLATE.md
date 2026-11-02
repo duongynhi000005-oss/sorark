@@ -10,3 +10,4 @@ Closes #<!-- issue number -->
 - [ ] `cargo clippy --workspace --all-targets --all-features -- -D warnings` passes with zero warnings
 - [ ] `cargo test --workspace` passes all unit and CLI integration tests
 - [ ] Added unit/integration tests covering the new rule or feature
+

@@ -14,3 +14,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`sorark-diff`:** Storage-layout (`ScMap`/`ScVec`/`ScSpecUdtUnionV0`) and ABI upgrade compatibility engine (`ARK-DIFF-001` through `ARK-DIFF-005`) comparing `v1` and `v2` contracts across `.rs` and `.wasm` targets.
 - **`sorark-cli` (`sorark`):** Command-line binary supporting `lint`, `diff`, `inspect`, `rules`, and `init` with `text`, `json`, `sarif` (v2.1.0), and `markdown` output formats.
 - **`examples/`:** Three real `#![no_std]` Soroban smart contracts (`vulnerable-vault`, `upgrade-v1`, `upgrade-v2-broken`) using `soroban-sdk`.
+

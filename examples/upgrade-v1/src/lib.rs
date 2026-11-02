@@ -117,3 +117,4 @@ fn bump_position_ttl(env: &Env, user: &Address) {
         PERSISTENT_TTL_EXTEND,
     );
 }
+

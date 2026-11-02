@@ -16,13 +16,17 @@ exclude = [
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.87"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/sorark-labs/sorark"
 homepage = "https://github.com/sorark-labs/sorark"
 authors = ["SORARK Maintainers"]
 keywords = ["stellar", "soroban", "static-analysis", "linter", "security"]
-categories = ["command-line-utilities", "development-tools", "cryptography::cryptocurrencies"]
+categories = [
+    "command-line-utilities",
+    "development-tools",
+    "cryptography::cryptocurrencies",
+]
 
 [workspace.dependencies]
 sorark-ir = { path = "crates/sorark-ir", version = "0.1.0" }
@@ -30,18 +34,26 @@ sorark-ast = { path = "crates/sorark-ast", version = "0.1.0" }
 sorark-wasm = { path = "crates/sorark-wasm", version = "0.1.0" }
 sorark-diff = { path = "crates/sorark-diff", version = "0.1.0" }
 
-anyhow = "1.0"
-clap = { version = "4.5", features = ["derive", "env"] }
-proc-macro2 = { version = "1.0", features = ["span-locations"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-stellar-xdr = { version = "22.0", default-features = false, features = ["curr", "std", "serde"] }
-syn = { version = "2.0", features = ["full", "visit", "extra-traits", "parsing"] }
-thiserror = "2.0"
-toml = "0.8"
-walkdir = "2.5"
-wasmparser = "0.224"
-tempfile = "3.14"
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive", "env"] }
+proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+stellar-xdr = { version = "30.0.0", default-features = false, features = [
+    "std",
+    "serde",
+] }
+syn = { version = "3.0.9", features = [
+    "full",
+    "visit",
+    "extra-traits",
+    "parsing",
+] }
+thiserror = "2.0.21"
+toml = "1.1.8"
+walkdir = "2.5.0"
+wasmparser = "0.263.0"
+tempfile = "3.27.0"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

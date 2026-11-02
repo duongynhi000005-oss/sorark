@@ -1,109 +1,7 @@
+//! Static catalog of built-in SORARK rules across the AST, WASM, and Diff engines.
+
+use super::{RuleCategory, Severity};
 use serde::{Deserialize, Serialize};
-use std::fmt;
-
-/// Severity level of a SORARK diagnostic finding.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Severity {
-    Info,
-    Warning,
-    Error,
-}
-
-impl Severity {
-    #[must_use]
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Info => "info",
-            Self::Warning => "warning",
-            Self::Error => "error",
-        }
-    }
-
-    /// Maps SORARK severity to SARIF v2.1.0 level string.
-    #[must_use]
-    pub const fn sarif_level(self) -> &'static str {
-        match self {
-            Self::Info => "note",
-            Self::Warning => "warning",
-            Self::Error => "error",
-        }
-    }
-}
-
-impl fmt::Display for Severity {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-/// Confidence level of a static or binary analysis finding.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Confidence {
-    Low,
-    Medium,
-    High,
-}
-
-impl fmt::Display for Confidence {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Low => f.write_str("low"),
-            Self::Medium => f.write_str("medium"),
-            Self::High => f.write_str("high"),
-        }
-    }
-}
-
-/// High-level rule taxonomy for SORARK checks.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum RuleCategory {
-    StorageSafety,
-    StateArchival,
-    UpgradeAuth,
-    StorageCompatibility,
-    AbiCompatibility,
-    ResourceBudget,
-}
-
-impl fmt::Display for RuleCategory {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::StorageSafety => f.write_str("storage-safety"),
-            Self::StateArchival => f.write_str("state-archival"),
-            Self::UpgradeAuth => f.write_str("upgrade-auth"),
-            Self::StorageCompatibility => f.write_str("storage-compatibility"),
-            Self::AbiCompatibility => f.write_str("abi-compatibility"),
-            Self::ResourceBudget => f.write_str("resource-budget"),
-        }
-    }
-}
-
-/// Exact file and line/column location for a finding.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SourceSpan {
-    pub file: String,
-    pub line: usize,
-    pub column: usize,
-    pub end_line: Option<usize>,
-    pub snippet: Option<String>,
-}
-
-/// A structured diagnostic finding produced by any SORARK analysis engine.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Diagnostic {
-    pub rule_id: String,
-    pub title: String,
-    pub severity: Severity,
-    pub confidence: Confidence,
-    pub category: RuleCategory,
-    pub message: String,
-    pub help: String,
-    pub span: Option<SourceSpan>,
-    pub contract_item: Option<String>,
-}
 
 /// Static metadata describing a registered SORARK rule (used by `sorark rules` and SARIF `tool.driver.rules`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -119,7 +17,16 @@ pub struct RuleDescriptor {
 /// Complete catalog of built-in SORARK rules across AST, WASM, and Upgrade Diff engines.
 #[must_use]
 pub fn builtin_rule_catalog() -> Vec<RuleDescriptor> {
-    vec![
+    let mut rules = Vec::with_capacity(12);
+    rules.extend(ast_rule_descriptors());
+    rules.extend(wasm_rule_descriptors());
+    rules.extend(diff_rule_descriptors());
+    rules
+}
+
+/// Descriptors for the 6 Pass-2 Rust AST static analysis rules (`ARK-STOR-*`, `ARK-UPG-*`).
+fn ast_rule_descriptors() -> [RuleDescriptor; 6] {
+    [
         RuleDescriptor {
             id: "ARK-STOR-001",
             title: "Unbounded Collection in Instance Storage",
@@ -168,14 +75,24 @@ pub fn builtin_rule_catalog() -> Vec<RuleDescriptor> {
             description: "Detects stateful Soroban contracts that initialize administrative state but expose no update_current_contract_wasm upgrade path.",
             remediation: "Add an admin-guarded upgrade(env: Env, new_wasm_hash: BytesN<32>) entrypoint or document immutability intentionally.",
         },
-        RuleDescriptor {
-            id: "ARK-WASM-001",
-            title: "WASM Binary Ledger Size Budget & SEP-0048 Metadata Check",
-            category: RuleCategory::ResourceBudget,
-            default_severity: Severity::Warning,
-            description: "Checks compiled .wasm contract size against Stellar ledger size thresholds (48 KiB warning / 64 KiB limit) and verifies presence of contractspecv0 and contractenvmetav0 sections.",
-            remediation: "Enable release optimizations (opt-level = \"z\", lto = true, strip = \"symbols\") in Cargo.toml and compile with stellar contract build.",
-        },
+    ]
+}
+
+/// Descriptors for compiled WebAssembly binary resource and SEP-0048 checks (`ARK-WASM-*`).
+fn wasm_rule_descriptors() -> [RuleDescriptor; 1] {
+    [RuleDescriptor {
+        id: "ARK-WASM-001",
+        title: "WASM Binary Ledger Size Budget & SEP-0048 Metadata Check",
+        category: RuleCategory::ResourceBudget,
+        default_severity: Severity::Warning,
+        description: "Checks compiled .wasm contract size against Stellar ledger size thresholds (48 KiB warning / 64 KiB limit) and verifies presence of contractspecv0 and contractenvmetav0 sections.",
+        remediation: "Enable release optimizations (opt-level = \"z\", lto = true, strip = \"symbols\") in Cargo.toml and compile with stellar contract build.",
+    }]
+}
+
+/// Descriptors for the 5 upgrade storage-layout and ABI compatibility rules (`ARK-DIFF-*`).
+fn diff_rule_descriptors() -> [RuleDescriptor; 5] {
+    [
         RuleDescriptor {
             id: "ARK-DIFF-001",
             title: "Incompatible #[contracttype] Struct Storage Layout Mutation",

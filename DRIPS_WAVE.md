@@ -138,3 +138,4 @@ Each task below is designed to be self-contained, testable within a 7-day Wave s
 * **Target Files:** `action.yml`, `README.md`, `.github/workflows/ci.yml`
 * **Scope:** Create a turnkey root `action.yml` so any Stellar Soroban repository can add `uses: sorark-labs/sorark@v0.1` in their GitHub Actions workflow to run `sorark lint` and upload SARIF results automatically.
 * **Acceptance Criteria:** `action.yml` is self-tested inside `.github/workflows/ci.yml`.
+

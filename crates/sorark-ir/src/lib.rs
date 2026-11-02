@@ -13,7 +13,7 @@ pub use config::{
     MAINNET_MIN_PERSISTENT_ENTRY_TTL, MAINNET_MIN_TEMP_ENTRY_TTL, SorarkConfig,
 };
 pub use diagnostic::{
-    Confidence, Diagnostic, RuleCategory, RuleDescriptor, Severity, SourceSpan,
+    Confidence, Diagnostic, DiagnosticBuilder, RuleCategory, RuleDescriptor, Severity, SourceSpan,
     builtin_rule_catalog,
 };
 pub use model::{
@@ -101,5 +101,24 @@ mod tests {
             .unwrap();
         assert_eq!(cfg.max_entry_ttl, 3_110_400);
         assert!(cfg.is_rule_enabled("ARK-STOR-001"));
+    }
+
+    #[test]
+    fn diagnostic_builder_constructs_complete_finding() {
+        let diag = Diagnostic::builder(
+            "ARK-STOR-001",
+            "Unbounded Collection",
+            RuleCategory::StorageSafety,
+            Severity::Error,
+        )
+        .message("Map in instance storage")
+        .help("Move to persistent storage")
+        .span(SourceSpan::new("src/lib.rs", 12, 5).with_snippet("env.storage().instance()"))
+        .contract_item("init")
+        .build();
+
+        assert_eq!(diag.rule_id, "ARK-STOR-001");
+        assert_eq!(diag.severity, Severity::Error);
+        assert_eq!(diag.span.as_ref().unwrap().line, 12);
     }
 }

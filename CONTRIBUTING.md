@@ -64,3 +64,4 @@ During active **Stellar Wave** sprints on [drips.network/wave/stellar](https://w
 2. Reference the issue number (`Closes #<id>`) in your Pull Request description.
 3. Ensure every new feature or rule includes unit tests and updates `sorark rules` catalog metadata if applicable.
 4. Keep PRs focused on the single assigned issue so maintainers can review and merge within 24 hours.
+

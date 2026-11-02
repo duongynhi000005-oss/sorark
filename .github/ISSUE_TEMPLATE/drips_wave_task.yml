@@ -48,3 +48,4 @@ body:
         - [ ] `cargo test --workspace` passes
     validations:
       required: true
+

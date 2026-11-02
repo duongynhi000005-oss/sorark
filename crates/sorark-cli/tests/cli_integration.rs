@@ -1,7 +1,7 @@
 use sorark_wasm::encode_soroban_wasm_with_specs;
 use std::path::PathBuf;
 use std::process::Command;
-use stellar_xdr::curr::{
+use stellar_xdr::{
     ScSpecEntry, ScSpecTypeDef, ScSpecUdtStructFieldV0, ScSpecUdtStructV0, StringM, VecM,
 };
 

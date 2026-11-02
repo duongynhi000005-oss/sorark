@@ -24,3 +24,4 @@ If you discover a security vulnerability in `sorark` (such as an XDR parser deni
 2. Use GitHub's **[Private Vulnerability Reporting](https://github.com/sorark-labs/sorark/security/advisories/new)** tab on the repository.
 3. Include a minimal reproduction `.rs` snippet or `.wasm` fixture and the `sorark` version.
 4. Maintainers will acknowledge receipt within **48 hours** and coordinate a patch release and advisory.
+
