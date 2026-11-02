@@ -1,0 +1,18 @@
+[package]
+name = "sorark-wasm"
+description = "Soroban WebAssembly custom section (SEP-0048) XDR spec decoder and ledger byte budget analyzer"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+sorark-ir.workspace = true
+serde.workspace = true
+stellar-xdr.workspace = true
+thiserror.workspace = true
+wasmparser.workspace = true
+
+[lints]
+workspace = true

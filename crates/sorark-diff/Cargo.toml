@@ -1,0 +1,16 @@
+[package]
+name = "sorark-diff"
+description = "Soroban contract storage-layout (ScVal/ScMap) and ABI upgrade compatibility diff engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+sorark-ir.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
