@@ -90,14 +90,15 @@ mod tests {
         assert!(reason.contains("UserPosition"));
         assert!(reason.contains("Vec<i128>"));
 
-        assert!(!module.is_type_transitively_unbounded(&TypeRef::Custom("FixedConfig".to_string())));
+        assert!(
+            !module.is_type_transitively_unbounded(&TypeRef::Custom("FixedConfig".to_string()))
+        );
     }
 
     #[test]
     fn config_parses_default_template_and_rule_filters() {
-        let cfg =
-            SorarkConfig::from_toml_str(SorarkConfig::default_toml_template(), "sorark.toml")
-                .unwrap();
+        let cfg = SorarkConfig::from_toml_str(SorarkConfig::default_toml_template(), "sorark.toml")
+            .unwrap();
         assert_eq!(cfg.max_entry_ttl, 3_110_400);
         assert!(cfg.is_rule_enabled("ARK-STOR-001"));
     }

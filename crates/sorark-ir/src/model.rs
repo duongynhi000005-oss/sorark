@@ -126,11 +126,13 @@ impl TypeRef {
                 )
             }
             Self::Vec(inner) => format!("Vec<{}>", inner.canonical_signature()),
-            Self::Map { key, value } => format!(
-                "Map<{}, {}>",
-                key.canonical_signature(),
-                value.canonical_signature()
-            ),
+            Self::Map { key, value } => {
+                format!(
+                    "Map<{}, {}>",
+                    key.canonical_signature(),
+                    value.canonical_signature()
+                )
+            }
             Self::Tuple(items) => {
                 let joined: Vec<String> = items.iter().map(Self::canonical_signature).collect();
                 format!("({})", joined.join(", "))
@@ -369,10 +371,7 @@ impl ContractModule {
                 for case in &u.cases {
                     for payload_ty in &case.payload {
                         if let Some(inner) = self.find_unbounded_chain(payload_ty, visited) {
-                            return Some(format!(
-                                "`{}::{}` payload ({inner})",
-                                u.name, case.name
-                            ));
+                            return Some(format!("`{}::{}` payload ({inner})", u.name, case.name));
                         }
                     }
                 }
