@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  quality-gates:
+    name: Format, Clippy, & Workspace Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust 2024 toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Cargo registry and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run strict Clippy lints
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Run unit and CLI integration tests
+        run: cargo test --workspace
+
+      - name: Build bundled Soroban example contracts (wasm32-unknown-unknown)
+        run: |
+          cargo build --manifest-path examples/vulnerable-vault/Cargo.toml --target wasm32-unknown-unknown --release
+          cargo build --manifest-path examples/upgrade-v1/Cargo.toml --target wasm32-unknown-unknown --release
+          cargo build --manifest-path examples/upgrade-v2-broken/Cargo.toml --target wasm32-unknown-unknown --release
+
+      - name: Self-Dogfood SORARK CLI on Example Contracts & Compiled WASMs
+        run: |
+          cargo run -p sorark-cli -- --deny-warnings lint examples/upgrade-v1
+          cargo run -p sorark-cli -- inspect examples/upgrade-v1/target/wasm32-unknown-unknown/release/upgrade_v1.wasm
+          cargo run -p sorark-cli -- rules

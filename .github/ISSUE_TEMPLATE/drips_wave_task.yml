@@ -1,0 +1,50 @@
+name: Drips Stellar Wave Task
+description: Structured issue template for Drips Stellar Wave sprint tasks (100 / 150 / 200 Points)
+title: "[Wave] "
+labels: ["drips-wave"]
+body:
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Drips Wave Complexity Tier
+      description: Select the complexity and point value for this Wave sprint issue.
+      options:
+        - Trivial (100 Points)
+        - Medium (150 Points)
+        - High (200 Points)
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Stellar/Soroban Problem Statement
+      description: Explain why this check, feature, or improvement matters for Soroban smart contracts.
+      placeholder: "On Soroban, ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: target_files
+    attributes:
+      label: Target Crate(s) & Files
+      description: List the exact crates and files the contributor should modify.
+      placeholder: |
+        - `crates/sorark-ast/src/rules.rs`
+        - `crates/sorark-ir/src/diagnostic.rs`
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria (Definition of Done)
+      description: Concrete checklist that must be satisfied before the PR can be merged.
+      value: |
+        - [ ] Implementation follows `#![forbid(unsafe_code)]` and uses structured `thiserror` errors (no `.unwrap()` in library code)
+        - [ ] Unit and/or CLI integration tests added covering both positive detection and non-triggering cases
+        - [ ] `cargo fmt --all -- --check` passes
+        - [ ] `cargo clippy --workspace --all-targets --all-features -- -D warnings` passes
+        - [ ] `cargo test --workspace` passes
+    validations:
+      required: true
