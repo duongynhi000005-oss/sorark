@@ -37,8 +37,7 @@ impl SourceSpan {
 
     /// Creates an optional span when a file path is available.
     #[must_use]
-    pub fn from_optional_file(file: &Option<String>, line: Option<usize>) -> Option<Self> {
-        file.as_ref()
-            .map(|f| Self::new(f.clone(), line.unwrap_or(1), 1))
+    pub fn from_optional_file(file: Option<&str>, line: Option<usize>) -> Option<Self> {
+        file.map(|f| Self::new(f, line.unwrap_or(1), 1))
     }
 }
