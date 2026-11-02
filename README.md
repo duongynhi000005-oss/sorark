@@ -1,6 +1,7 @@
 # SORARK (`sorark`)
 
 [![CI](https://github.com/sorark-labs/sorark/actions/workflows/ci.yml/badge.svg)](https://github.com/sorark-labs/sorark/actions/workflows/ci.yml)
+[![Release v0.1.0](https://img.shields.io/github/v/release/sorark-labs/sorark?label=Release&color=brightgreen)](https://github.com/sorark-labs/sorark/releases/tag/v0.1.0)
 [![Rust 1.87+ (2024 Edition)](https://img.shields.io/badge/Rust-1.87%2B_(2024_Edition)-orange.svg)](https://www.rust-lang.org/)
 [![Stellar Soroban SEP-0048](https://img.shields.io/badge/Stellar-Soroban_SEP--0048_XDR-blue.svg)](https://developers.stellar.org/)
 [![Drips Stellar Wave](https://img.shields.io/badge/Drips_Wave-Stellar_Ecosystem-7047EB.svg)](https://www.drips.network/wave/stellar)
@@ -99,6 +100,13 @@ sorark/
 
 ### Prerequisites
 * **Rust `1.87+` (2024 Edition)** (`rustup update stable`)
+
+### Install the `sorark` CLI Globally (Optional)
+
+```bash
+cargo install --git https://github.com/sorark-labs/sorark sorark-cli
+sorark --version
+```
 
 ### Build & Run Against Bundled Soroban Contracts
 
