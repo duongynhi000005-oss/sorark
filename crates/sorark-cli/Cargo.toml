@@ -22,6 +22,7 @@ serde.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]
+stellar-xdr.workspace = true
 tempfile.workspace = true
 
 [lints]
