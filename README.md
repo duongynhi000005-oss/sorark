@@ -132,6 +132,30 @@ cargo run -p sorark-cli -- lint examples/vulnerable-vault --format sarif
 cargo run -p sorark-cli -- diff --old examples/upgrade-v1 --new examples/upgrade-v2-broken --format markdown
 ```
 
+### GitHub Actions Integration (`action.yml`)
+
+Run `sorark lint`, `sorark diff`, or `sorark inspect` directly in your Soroban CI pipeline using the composite GitHub Action:
+
+```yaml
+- name: Run SORARK Static Storage & Archival Lint
+  uses: sorark-labs/sorark@main
+  with:
+    command: lint
+    path: contracts/vault
+    format: markdown
+    deny-warnings: 'true'
+    summary: 'true'
+
+- name: Verify Soroban v1-to-v2 Upgrade Compatibility
+  uses: sorark-labs/sorark@main
+  with:
+    command: diff
+    old: artifacts/vault_v1.wasm
+    new: target/wasm32-unknown-unknown/release/vault_v2.wasm
+    format: markdown
+    summary: 'true'
+```
+
 ---
 
 ## Real CLI Output Examples

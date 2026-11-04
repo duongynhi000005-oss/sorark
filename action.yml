@@ -1,0 +1,141 @@
+name: 'SORARK — Stellar Soroban Static Analyzer & Upgrade Diff'
+description: 'Run SORARK state-archival, storage-tier safety, and v1-to-v2 WASM upgrade compatibility checks in CI.'
+author: 'sorark-labs'
+
+branding:
+  icon: 'shield'
+  color: 'purple'
+
+inputs:
+  command:
+    description: 'SORARK subcommand to run (`lint`, `diff`, `inspect`, or `rules`).'
+    required: false
+    default: 'lint'
+  path:
+    description: 'Target Soroban contract directory, `.rs` file, or `.wasm` binary for `lint` or `inspect`.'
+    required: false
+    default: '.'
+  old:
+    description: 'Baseline (`v1`) contract path (`.rs` or `.wasm`) when `command: diff`.'
+    required: false
+    default: ''
+  new:
+    description: 'Candidate (`v2`) contract path (`.rs` or `.wasm`) when `command: diff`.'
+    required: false
+    default: ''
+  format:
+    description: 'Output format (`text`, `json`, `sarif`, `markdown`).'
+    required: false
+    default: 'text'
+  deny-warnings:
+    description: 'Treat warning-level diagnostics as non-zero exit code failures (`true` or `false`).'
+    required: false
+    default: 'false'
+  config:
+    description: 'Optional path to a `sorark.toml` configuration file.'
+    required: false
+    default: ''
+  rule:
+    description: 'Optional single rule ID filter for `lint` (e.g. `ARK-STOR-001`).'
+    required: false
+    default: ''
+  report-path:
+    description: 'File path where the rendered SORARK report will be saved.'
+    required: false
+    default: 'sorark-report.out'
+  summary:
+    description: 'Append output to `$GITHUB_STEP_SUMMARY` (`true` or `false`).'
+    required: false
+    default: 'true'
+
+outputs:
+  exit-code:
+    description: 'Numeric exit code returned by `sorark` (`0` when clean, non-zero on findings).'
+    value: ${{ steps.run-sorark.outputs.exit-code }}
+  report-path:
+    description: 'Path to the saved SORARK report file.'
+    value: ${{ steps.run-sorark.outputs.report-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Build or locate sorark CLI binary
+      shell: bash
+      run: |
+        set -euo pipefail
+        if command -v sorark >/dev/null 2>&1; then
+          echo "SORARK_BIN=$(command -v sorark)" >> "$GITHUB_ENV"
+        elif [ -x "${{ github.action_path }}/target/debug/sorark" ]; then
+          echo "SORARK_BIN=${{ github.action_path }}/target/debug/sorark" >> "$GITHUB_ENV"
+        elif [ -x "${{ github.action_path }}/target/release/sorark" ]; then
+          echo "SORARK_BIN=${{ github.action_path }}/target/release/sorark" >> "$GITHUB_ENV"
+        else
+          cargo build --manifest-path "${{ github.action_path }}/Cargo.toml" -p sorark-cli --release
+          echo "SORARK_BIN=${{ github.action_path }}/target/release/sorark" >> "$GITHUB_ENV"
+        fi
+
+    - name: Execute SORARK analysis
+      id: run-sorark
+      shell: bash
+      run: |
+        set -uo pipefail
+        ARGS=()
+        if [ -n "${{ inputs.config }}" ]; then
+          ARGS+=(--config "${{ inputs.config }}")
+        fi
+        if [ "${{ inputs.deny-warnings }}" = "true" ]; then
+          ARGS+=(--deny-warnings)
+        fi
+
+        CMD="${{ inputs.command }}"
+        case "$CMD" in
+          lint)
+            ARGS+=(lint "${{ inputs.path }}" --format "${{ inputs.format }}")
+            if [ -n "${{ inputs.rule }}" ]; then
+              ARGS+=(--rule "${{ inputs.rule }}")
+            fi
+            ;;
+          diff)
+            if [ -z "${{ inputs.old }}" ] || [ -z "${{ inputs.new }}" ]; then
+              echo "::error::Both 'old' and 'new' inputs are required when command is 'diff'."
+              exit 2
+            fi
+            ARGS+=(diff --old "${{ inputs.old }}" --new "${{ inputs.new }}" --format "${{ inputs.format }}")
+            ;;
+          inspect)
+            ARGS+=(inspect "${{ inputs.path }}" --format "${{ inputs.format }}")
+            ;;
+          rules)
+            ARGS+=(rules --format "${{ inputs.format }}")
+            ;;
+          *)
+            echo "::error::Unsupported command '$CMD'. Expected lint, diff, inspect, or rules."
+            exit 2
+            ;;
+        esac
+
+        REPORT_FILE="${{ inputs.report-path }}"
+        set +e
+        "$SORARK_BIN" "${ARGS[@]}" > "$REPORT_FILE"
+        EXIT_CODE=$?
+        set -e
+
+        cat "$REPORT_FILE"
+        echo "exit-code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+        echo "report-path=$REPORT_FILE" >> "$GITHUB_OUTPUT"
+
+        if [ "${{ inputs.summary }}" = "true" ] && [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+          {
+            echo "### SORARK Analysis (`$CMD`)"
+            echo ""
+            if [ "${{ inputs.format }}" = "markdown" ]; then
+              cat "$REPORT_FILE"
+            else
+              echo '```'
+              cat "$REPORT_FILE"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        exit "$EXIT_CODE"

@@ -47,3 +47,11 @@ jobs:
           cargo run -p sorark-cli -- inspect examples/upgrade-v1/target/wasm32-unknown-unknown/release/upgrade_v1.wasm
           cargo run -p sorark-cli -- rules
 
+      - name: Self-Test Reusable Composite GitHub Action (action.yml)
+        uses: ./
+        with:
+          command: lint
+          path: examples/upgrade-v1
+          format: markdown
+          deny-warnings: 'true'
+          summary: 'true'
