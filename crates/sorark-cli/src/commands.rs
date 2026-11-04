@@ -7,8 +7,11 @@ use crate::format::{
 use anyhow::{Context, Result, bail};
 use sorark_ast::scan_rust_path;
 use sorark_diff::compare_contract_modules;
-use sorark_ir::{ContractModule, Diagnostic, Severity, SorarkConfig, builtin_rule_catalog};
+use sorark_ir::{
+    ContractModule, Diagnostic, Severity, SorarkConfig, StorageTier, builtin_rule_catalog,
+};
 use sorark_wasm::inspect_wasm_file;
+use std::fmt::Write as _;
 use std::path::Path;
 use std::process::ExitCode;
 
@@ -20,7 +23,12 @@ pub fn execute(cli: Cli) -> Result<ExitCode> {
     }
 
     match cli.command {
-        Commands::Lint { path, format, rule } => run_lint(&path, format, rule.as_deref(), &config),
+        Commands::Lint {
+            path,
+            format,
+            rule,
+            suggest_patch,
+        } => run_lint(&path, format, rule.as_deref(), suggest_patch, &config),
         Commands::Diff { old, new, format } => run_diff(&old, &new, format, &config),
         Commands::Inspect { wasm, format } => run_inspect(&wasm, format, &config),
         Commands::Rules { format } => run_rules(format),
@@ -33,12 +41,14 @@ fn run_lint(
     path: &Path,
     format: OutputFormat,
     rule_filter: Option<&str>,
+    suggest_patch: bool,
     config: &SorarkConfig,
 ) -> Result<ExitCode> {
-    let mut diagnostics = if is_wasm_path(path) {
-        inspect_wasm_file(path, config)?.diagnostics
+    let (mut diagnostics, ast_ctx) = if is_wasm_path(path) {
+        (inspect_wasm_file(path, config)?.diagnostics, None)
     } else {
-        scan_rust_path(path, config)?.diagnostics
+        let report = scan_rust_path(path, config)?;
+        (report.diagnostics, Some(report.context))
     };
 
     if let Some(filter) = rule_filter {
@@ -47,10 +57,79 @@ fn run_lint(
 
     let rendered = render_diagnostics(&diagnostics, format)?;
     print!("{rendered}");
+
+    if suggest_patch
+        && let Some(ctx) = ast_ctx.as_ref()
+    {
+        let patch = render_missing_ttl_patches(&diagnostics, ctx, config);
+        if !patch.is_empty() {
+            print!("\n{patch}");
+        }
+    }
+
     Ok(exit_code_for_diagnostics(
         &diagnostics,
         config.fail_on_warnings,
     ))
+}
+
+/// Synthesizes unified diff patches (`--- a/...`, `+++ b/...`) inserting `extend_ttl` calls
+/// immediately after `ARK-STOR-002` unextended `instance()` or `persistent()` storage writes.
+fn render_missing_ttl_patches(
+    diagnostics: &[Diagnostic],
+    ctx: &sorark_ast::parser::AstAnalysisContext,
+    config: &SorarkConfig,
+) -> String {
+    let threshold = config.min_persistent_ttl;
+    let extend_to = threshold.saturating_mul(4).min(config.max_entry_ttl).max(threshold);
+    let mut out = String::new();
+
+    for diag in diagnostics.iter().filter(|d| d.rule_id == "ARK-STOR-002") {
+        let Some(span) = diag.span.as_ref() else {
+            continue;
+        };
+        let matching_op = ctx
+            .functions
+            .iter()
+            .filter(|f| f.file == span.file)
+            .flat_map(|f| f.storage_ops.iter())
+            .find(|op| op.line == span.line);
+
+        let Ok(file_text) = std::fs::read_to_string(&span.file) else {
+            continue;
+        };
+        let lines: Vec<&str> = file_text.lines().collect();
+        if span.line == 0 || span.line > lines.len() {
+            continue;
+        }
+        let target_line = lines[span.line - 1];
+        let indent: String = target_line
+            .chars()
+            .take_while(|c| c.is_whitespace())
+            .collect();
+
+        let ttl_stmt = match matching_op {
+            Some(op) if op.tier == StorageTier::Instance => {
+                format!("{indent}env.storage().instance().extend_ttl({threshold}, {extend_to});")
+            }
+            Some(op) => {
+                let key_arg = op.key_expr.as_deref().unwrap_or("&key");
+                format!(
+                    "{indent}env.storage().persistent().extend_ttl({key_arg}, {threshold}, {extend_to});"
+                )
+            }
+            None => format!("{indent}env.storage().persistent().extend_ttl(&key, {threshold}, {extend_to});"),
+        };
+
+        let normalized_path = span.file.replace('\\', "/");
+        let _ = writeln!(out, "--- a/{normalized_path}");
+        let _ = writeln!(out, "+++ b/{normalized_path}");
+        let _ = writeln!(out, "@@ -{},1 +{},2 @@", span.line, span.line);
+        let _ = writeln!(out, " {target_line}");
+        let _ = writeln!(out, "+{ttl_stmt}");
+    }
+
+    out
 }
 
 /// Executes `sorark diff` between a baseline (`--old`) and candidate (`--new`) contract.

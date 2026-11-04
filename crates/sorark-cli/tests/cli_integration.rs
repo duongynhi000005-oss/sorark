@@ -36,6 +36,28 @@ fn cli_lint_catches_all_hazards_in_vulnerable_vault_example() {
 }
 
 #[test]
+fn cli_lint_suggest_patch_emits_unified_diff_for_missing_extend_ttl() {
+    let example_dir = workspace_root().join("examples/vulnerable-vault");
+    let output = Command::new(sorark_bin())
+        .args([
+            "lint",
+            example_dir.to_str().unwrap(),
+            "--suggest-patch",
+        ])
+        .output()
+        .unwrap();
+
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("--- a/"), "Expected unified diff header in stdout: {stdout}");
+    assert!(stdout.contains("+++ b/"), "Expected unified diff header in stdout: {stdout}");
+    assert!(
+        stdout.contains("+        env.storage().persistent().extend_ttl(&key, 4096, 16384);"),
+        "Expected synthesized extend_ttl patch line in stdout: {stdout}"
+    );
+}
+
+#[test]
 fn cli_lint_passes_cleanly_on_upgrade_v1_example() {
     let example_dir = workspace_root().join("examples/upgrade-v1");
     let output = Command::new(sorark_bin())

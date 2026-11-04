@@ -42,6 +42,10 @@ pub enum Commands {
         /// Filter output to only a specific rule ID (e.g. `ARK-STOR-001`).
         #[arg(long)]
         rule: Option<String>,
+
+        /// Emit a unified diff patch suggesting `extend_ttl` calls for `ARK-STOR-002` findings.
+        #[arg(long)]
+        suggest_patch: bool,
     },
 
     /// Check storage-layout (`ScMap`/`ScVec`) and ABI upgrade safety between two contract versions (`v1` vs `v2`).
